@@ -15,7 +15,7 @@
 
 using namespace std;
 
-// 全局数据结构
+// 全局数据结构、
 unordered_map<string, unordered_map<string, int>> adjList;    // 邻接表
 unordered_map<string, vector<string>> inEdges;                // 入边记录
 unordered_set<string> nodes;                                  // 所有节点
