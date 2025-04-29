@@ -160,32 +160,54 @@ pair<vector<string>, int> shortestPath(const string& start, const string& end) {
 }
 
 // PageRank计算
-unordered_map<string, double> calculatePageRank(double d = 0.85, double threshold = 1e-6, int max_iter = 100) {
+unordered_map<string, double> calculatePageRank(double d = 0.85, double threshold = 1e-6, int max_iter = 1000) {
     unordered_map<string, double> pr_old, pr_new;
-    const double init = 1.0 / nodes.size();
     const int N = nodes.size();
+    if (N == 0) return {};
+
+    // 初始化所有节点的PR值为1/N
+    const double init = 1.0 / N;
     for (const auto& node : nodes) pr_old[node] = init;
 
+    // 预计算悬挂节点（出度为0的节点）
+    unordered_set<string> dangling_nodes;
+    for (const auto& node : nodes) {
+        if (adjList[node].empty()) {
+            dangling_nodes.insert(node);
+        }
+    }
+
     for (int iter = 0; iter < max_iter; ++iter) {
-        double max_diff = 0;
+        // 计算悬挂节点的总贡献
+        double dangling_contribution = 0.0;
+        for (const auto& v : dangling_nodes) {
+            dangling_contribution += pr_old[v];
+        }
+        dangling_contribution /= N; // 每个悬挂节点贡献PR(v)/N到所有节点
+
+        // 更新每个节点的PR值
         for (const auto& node : nodes) {
             double sum = 0.0;
-            // 处理入边节点贡献
-            for (const auto& v : inEdges[node]) { // v是当前节点的前驱节点
-                if (adjList[v].empty()) {
-                    // 出度为0时贡献PR(v)/N
-                    sum += pr_old[v] / N;
-                } else {
-                    // 正常贡献PR(v)/L(v)
-                    sum += pr_old[v] / adjList[v].size();
-                }
+            
+            // 步骤1：处理正常入边贡献
+            for (const auto& v : inEdges[node]) {
+                sum += pr_old[v] / adjList[v].size();
             }
-            // 更新公式
+            
+            // 步骤2：添加悬挂节点的全局贡献
+            sum += dangling_contribution;
+
+            // 应用PageRank公式
             pr_new[node] = (1 - d)/N + d * sum;
+        }
+
+        // 检查收敛条件
+        double max_diff = 0;
+        for (const auto& node : nodes) {
             max_diff = max(max_diff, abs(pr_new[node] - pr_old[node]));
         }
         if (max_diff < threshold) break;
-        pr_old.swap(pr_new); // 使用swap避免拷贝
+        swap(pr_old, pr_new);
     }
     return pr_old;
 }
