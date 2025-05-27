@@ -1,0 +1,11 @@
+{
+    "cpp-check-lint.--enable": true ,
+    "cpp-check-lint.cppcheck.--executable": "C:\\Program Files\\Cppcheck\\cppcheck.exe",
+    "cpp-check-lint.cppcheck.--enable=": "style",
+    "cpp-check-lint.cppcheck.--inline-suppr": false,  //取消内联
+    "cpp-check-lint.cppcheck.--language=": "c", //使用c语言进行检查
+    "cpp-check-lint.cppcheck.--onsave": false, //在文件保存时立刻检查该文件
+    "cpp-check-lint.cppcheck.--quick_fix": false,
+    //"cpp-check-lint.cpplint.--enable": false, //关闭无用的cpplint
+    
+}

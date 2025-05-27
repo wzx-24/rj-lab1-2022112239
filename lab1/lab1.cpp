@@ -12,7 +12,8 @@
 #include <ctime>
 #include <iomanip>
 #include <limits>
-
+#include <fstream>
+#include "../include/lab1.h"
 using namespace std;
 
 // 全局数据结构、
@@ -57,6 +58,38 @@ void buildGraph(const vector<string>& words) {
     }
     if (!words.empty()) nodes.insert(words.back());
 }
+
+
+void exportGraphToDot(const string& filename) {
+    ofstream dotFile(filename);
+    if (!dotFile) {
+        cerr << "Error creating DOT file!\n";
+        return;
+    }
+
+    dotFile << "digraph G {\n";
+    dotFile << "  rankdir=LR;\n";
+    dotFile << "  node [shape=circle];\n";
+
+    // 添加所有节点
+    for (const auto& node : nodes) {
+        dotFile << "  \"" << node << "\";\n";
+    }
+
+    // 添加带权重的边
+    for (const auto& [from, edges] : adjList) {
+        for (const auto& [to, weight] : edges) {
+            dotFile << "  \"" << from << "\" -> \"" << to 
+                   << "\" [label=\"" << weight << "\"];\n";
+        }
+    }
+
+    dotFile << "}\n";
+    dotFile.close();
+    cout << "Graph saved to " << filename << endl;
+    cout << "Generate image with: dot -Tpng " << filename << " -o graph.png\n";
+}
+
 
 // 查找桥接词
 vector<string> findBridgeWords(const string& w1, const string& w2) {
@@ -160,7 +193,7 @@ pair<vector<string>, int> shortestPath(const string& start, const string& end) {
 }
 
 // PageRank计算
-unordered_map<string, double> calculatePageRank(double d = 0.85, double threshold = 1e-6, int max_iter = 1000) {
+unordered_map<string, double> calculatePageRank(double d , double threshold , int max_iter ) {
     unordered_map<string, double> pr_old, pr_new;
     const int N = nodes.size();
     if (N == 0) return {};
@@ -265,7 +298,7 @@ string randomWalk() {
     return ss.str();
 }
 
-// 显示帮助信息
+
 void showHelp() {
     cout << "\n========== Graph Processor Menu ==========\n"
          << "1. Show Graph Structure\n"
@@ -279,7 +312,7 @@ void showHelp() {
 }
 
 // 主函数
-int main(int argc, char* argv[]) {
+/*int main(int argc, char* argv[]) {
     string filename;
     if (argc > 1) {
         filename = argv[1];
@@ -314,6 +347,7 @@ int main(int argc, char* argv[]) {
                     }
                     cout << "\n";
                 }
+                exportGraphToDot("graph.dot");
                 break;
             }
             case 2: { // 查询桥接词
@@ -407,4 +441,4 @@ int main(int argc, char* argv[]) {
                 cout << "Invalid choice!\n";
         }
     }
-}
+}*/
