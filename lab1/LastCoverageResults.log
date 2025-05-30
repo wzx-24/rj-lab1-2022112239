@@ -1,0 +1,32 @@
+[2025-05-28 08:55:05] [info] Start Program:
+Path:"test_shortestPath.exe"
+Arguments:
+Working directory: not set.
+Modules: Selected: * Excluded: 
+Sources: Selected: C:\Users\86137\Desktop\lab\lab1 Excluded: 
+Log Level: Normal
+Cover Children: 0
+Aggregate by file: 1
+Continue after C++ exception: 0
+Optimized build support: 0
+Export: html coverage.html 
+Input coverage: 
+Unified diff: 
+Excluded line regular expressions: 
+Substitute pdb source paths: 
+[2025-05-28 08:55:05] [info] Module: C:\Users\86137\Desktop\lab\lab1\test_shortestPath.exe is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] Module: C:\Windows\System32\ntdll.dll is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] Module: C:\Windows\System32\kernel32.dll is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] Module: C:\Windows\System32\KernelBase.dll is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] Module: C:\Windows\System32\msvcrt.dll is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] Module: D:\mingw64\bin\libgcc_s_seh-1.dll is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] Module: D:\mingw64\bin\libstdc++-6.dll is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] Module: D:\mingw64\bin\libwinpthread-1.dll is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] Module: D:\mingw64\bin\libwinpthread-1.dll is selected because it matches selected pattern: *
+[2025-05-28 08:55:05] [info] ----------------------------------------------------
+[2025-05-28 08:55:05] [info] Coverage generated in Folder C:\Users\86137\Desktop\lab\lab1\coverage.html
+[2025-05-28 08:55:05] [info] ----------------------------------------------------
+[2025-05-28 08:55:05] [info] The code coverage report is not what you expect? See the FAQ https://github.com/OpenCppCoverage/OpenCppCoverage/wiki/FAQ.
+[2025-05-28 08:55:05] [warning] No modules were selected. Please check the values of --modules and --excluded_modules.
+You can try to remove all --modules and --excluded_modules and use --modules=C:\Users\86137\Desktop\lab\lab1 instead.
+For additional help, see https://github.com/OpenCppCoverage/OpenCppCoverage/wiki/FAQ#coverage-report-is-empty.

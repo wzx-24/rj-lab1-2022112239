@@ -1,0 +1,448 @@
+        -:    0:Source:lab1.cpp
+        -:    0:Graph:test_shortestPath-lab1.gcno
+        -:    0:Data:test_shortestPath-lab1.gcda
+        -:    0:Runs:7
+        -:    1:#include <iostream>
+        -:    2:#include <fstream>
+        -:    3:#include <vector>
+        -:    4:#include <unordered_map>
+        -:    5:#include <unordered_set>
+        -:    6:#include <queue>
+        -:    7:#include <algorithm>
+        -:    8:#include <cctype>
+        -:    9:#include <sstream>
+        -:   10:#include <set>
+        -:   11:#include <random>
+        -:   12:#include <ctime>
+        -:   13:#include <iomanip>
+        -:   14:#include <limits>
+        -:   15:#include <fstream>
+        -:   16:#include "../include/lab1.h"
+        -:   17:using namespace std;
+        -:   18:
+        -:   19:// 全局数据结构、
+        -:   20:
+        -:   21:unordered_map<string, unordered_map<string, int>> adjList;    // 邻接表
+        -:   22:unordered_map<string, vector<string>> inEdges;                // 入边记录
+        -:   23:unordered_set<string> nodes;                                  // 所有节点
+        -:   24:mt19937 rng(time(nullptr));                                   // 随机数生成器
+        -:   25:
+        -:   26:// 文件处理函数
+    #####:   27:vector<string> processFile(const string& filename) {
+    #####:   28:    vector<string> words;
+    #####:   29:    ifstream file(filename);
+    #####:   30:    if (!file.is_open()) return words;
+        -:   31:
+    #####:   32:    string word;
+        -:   33:    char c;
+    #####:   34:    while (file.get(c)) {
+    #####:   35:        if (isalpha(c)) {
+    #####:   36:            word += tolower(c);
+    #####:   37:        } else if (!word.empty()) {
+    #####:   38:            words.push_back(word);
+    #####:   39:            word.clear();
+        -:   40:        }
+        -:   41:    }
+    #####:   42:    if (!word.empty()) words.push_back(word);
+    #####:   43:    return words;
+    #####:   44:}
+        -:   45:
+        -:   46:// 构建图结构
+       37:   47:void buildGraph(const vector<string>& words) {
+       37:   48:    nodes.clear();
+       37:   49:    adjList.clear();
+       37:   50:    inEdges.clear();
+        -:   51:
+      132:   52:    for (size_t i = 0; i < words.size() - 1; ++i) {
+       95:   53:        string from = words[i], to = words[i+1];
+       95:   54:        nodes.insert(from);
+       95:   55:        nodes.insert(to);
+       95:   56:        adjList[from][to]++;
+       95:   57:        inEdges[to].push_back(from);
+       95:   58:    }
+       37:   59:    if (!words.empty()) nodes.insert(words.back());
+       37:   60:}
+        -:   61:
+        -:   62:
+    #####:   63:void exportGraphToDot(const string& filename) {
+    #####:   64:    ofstream dotFile(filename);
+    #####:   65:    if (!dotFile) {
+    #####:   66:        cerr << "Error creating DOT file!\n";
+    #####:   67:        return;
+        -:   68:    }
+        -:   69:
+    #####:   70:    dotFile << "digraph G {\n";
+    #####:   71:    dotFile << "  rankdir=LR;\n";
+    #####:   72:    dotFile << "  node [shape=circle];\n";
+        -:   73:
+        -:   74:    // 添加所有节点
+    #####:   75:    for (const auto& node : nodes) {
+    #####:   76:        dotFile << "  \"" << node << "\";\n";
+        -:   77:    }
+        -:   78:
+        -:   79:    // 添加带权重的边
+    #####:   80:    for (const auto& [from, edges] : adjList) {
+    #####:   81:        for (const auto& [to, weight] : edges) {
+        -:   82:            dotFile << "  \"" << from << "\" -> \"" << to 
+    #####:   83:                   << "\" [label=\"" << weight << "\"];\n";
+        -:   84:        }
+        -:   85:    }
+        -:   86:
+    #####:   87:    dotFile << "}\n";
+    #####:   88:    dotFile.close();
+    #####:   89:    cout << "Graph saved to " << filename << endl;
+    #####:   90:    cout << "Generate image with: dot -Tpng " << filename << " -o graph.png\n";
+    #####:   91:}
+        -:   92:
+        -:   93:
+        -:   94:// 查找桥接词
+    #####:   95:vector<string> findBridgeWords(const string& w1, const string& w2) {
+    #####:   96:    string word1 = w1, word2 = w2;
+    #####:   97:    transform(word1.begin(), word1.end(), word1.begin(), ::tolower);
+    #####:   98:    transform(word2.begin(), word2.end(), word2.begin(), ::tolower);
+        -:   99:
+    #####:  100:    if (!nodes.count(word1) || !nodes.count(word2)) return {};
+    #####:  101:    vector<string> bridges;
+        -:  102:
+    #####:  103:    if (!adjList.count(word1)) return {};
+    #####:  104:    for (const auto& [word3, _] : adjList.at(word1)) {
+    #####:  105:        if (adjList.count(word3) && adjList[word3].count(word2)) {
+    #####:  106:            bridges.push_back(word3);
+        -:  107:        }
+        -:  108:    }
+    #####:  109:    return bridges;
+    #####:  110:}
+        -:  111:
+        -:  112:// 插入桥接词到新文本
+    #####:  113:string insertBridgeWords(const string& input) {
+    #####:  114:    vector<string> new_words;
+    #####:  115:    stringstream ss(input);
+    #####:  116:    string word;
+        -:  117:    
+        -:  118:    // 过滤非字母字符并转换为小写
+    #####:  119:    while (ss >> word) {
+    #####:  120:        string filtered;
+    #####:  121:        for (char c : word) {
+    #####:  122:            if (isalpha(c)) filtered += tolower(c);
+        -:  123:        }
+    #####:  124:        if (!filtered.empty()) new_words.push_back(filtered);
+    #####:  125:    }
+        -:  126:
+    #####:  127:    vector<string> result;
+    #####:  128:    for (size_t i = 0; i < new_words.size(); ++i) {
+    #####:  129:        result.push_back(new_words[i]);
+    #####:  130:        if (i < new_words.size() - 1) {
+    #####:  131:            auto bridges = findBridgeWords(new_words[i], new_words[i+1]);
+    #####:  132:            if (!bridges.empty()) {
+    #####:  133:                uniform_int_distribution<int> dist(0, bridges.size()-1);
+    #####:  134:                result.push_back(bridges[dist(rng)]);
+        -:  135:            }
+    #####:  136:        }
+        -:  137:    }
+        -:  138:
+        -:  139:    // 重建输出字符串
+    #####:  140:    string output;
+    #####:  141:    for (size_t i = 0; i < result.size(); ++i) {
+    #####:  142:        output += result[i];
+    #####:  143:        if (i != result.size()-1) output += " ";
+        -:  144:    }
+    #####:  145:    return output;
+    #####:  146:}
+        -:  147:
+        -:  148:// 最短路径计算（Dijkstra算法）
+       37:  149:pair<vector<string>, int> shortestPath(const string& start, const string& end) {
+       37:  150:    unordered_map<string, int> dist;
+       37:  151:    unordered_map<string, string> prev;
+       37:  152:    priority_queue<pair<int, string>, vector<pair<int, string>>, greater<>> pq;
+        -:  153:
+        -:  154:    // 初始化
+      162:  155:    for (const auto& node : nodes) dist[node] = numeric_limits<int>::max();
+       37:  156:    string s = start;
+       37:  157:    transform(s.begin(), s.end(), s.begin(), ::tolower);
+       37:  158:    string e = end;
+       37:  159:    transform(e.begin(), e.end(), e.begin(), ::tolower);
+        -:  160:    
+       37:  161:    if (!nodes.count(s) || !nodes.count(e)) return {{}, -1};
+        -:  162:
+       22:  163:    dist[s] = 0;
+       22:  164:    pq.push({0, s});
+        -:  165:
+       64:  166:    while (!pq.empty()) {
+       64:  167:        auto [d, u] = pq.top();
+       64:  168:        pq.pop();
+       64:  169:        if (u == e) break;
+      42*:  170:        if (d > dist[u]) continue;
+        -:  171:
+       91:  172:        for (const auto& [v, w] : adjList[u]) {
+       49:  173:            if (dist[v] > dist[u] + w) {
+       49:  174:                dist[v] = dist[u] + w;
+       49:  175:                prev[v] = u;
+       49:  176:                pq.push({dist[v], v});
+        -:  177:            }
+        -:  178:        }
+       64:  179:    }
+        -:  180:
+        -:  181:    // 不可达
+      22*:  182:    if (dist[e] == numeric_limits<int>::max()) return {{}, -1};
+        -:  183:
+        -:  184:    // 重建路径
+       22:  185:    vector<string> path;
+       57:  186:    for (string cur = e; cur != s; cur = prev[cur]) {
+       35:  187:        path.push_back(cur);
+      35*:  188:        if (!prev.count(cur)) return {{}, -1};
+       22:  189:    }
+       22:  190:    path.push_back(s);
+       22:  191:    reverse(path.begin(), path.end());
+       22:  192:    return {path, dist[e]};
+       37:  193:}
+        -:  194:
+        -:  195:// PageRank计算
+    #####:  196:unordered_map<string, double> calculatePageRank(double d , double threshold , int max_iter ) {
+    #####:  197:    unordered_map<string, double> pr_old, pr_new;
+    #####:  198:    const int N = nodes.size();
+    #####:  199:    if (N == 0) return {};
+        -:  200:
+        -:  201:    // 初始化所有节点的PR值为1/N
+    #####:  202:    const double init = 1.0 / N;
+    #####:  203:    for (const auto& node : nodes) pr_old[node] = init;
+        -:  204:
+        -:  205:    // 预计算悬挂节点（出度为0的节点）
+    #####:  206:    unordered_set<string> dangling_nodes;
+    #####:  207:    for (const auto& node : nodes) {
+    #####:  208:        if (adjList[node].empty()) {
+    #####:  209:            dangling_nodes.insert(node);
+        -:  210:        }
+        -:  211:    }
+        -:  212:
+    #####:  213:    for (int iter = 0; iter < max_iter; ++iter) {
+        -:  214:        // 计算悬挂节点的总贡献
+    #####:  215:        double dangling_contribution = 0.0;
+    #####:  216:        for (const auto& v : dangling_nodes) {
+    #####:  217:            dangling_contribution += pr_old[v];
+        -:  218:        }
+    #####:  219:        dangling_contribution /= N; // 每个悬挂节点贡献PR(v)/N到所有节点
+        -:  220:
+        -:  221:        // 更新每个节点的PR值
+    #####:  222:        for (const auto& node : nodes) {
+    #####:  223:            double sum = 0.0;
+        -:  224:            
+        -:  225:            // 步骤1：处理正常入边贡献
+    #####:  226:            for (const auto& v : inEdges[node]) {
+    #####:  227:                sum += pr_old[v] / adjList[v].size();
+        -:  228:            }
+        -:  229:            
+        -:  230:            // 步骤2：添加悬挂节点的全局贡献
+    #####:  231:            sum += dangling_contribution;
+        -:  232:
+        -:  233:            // 应用PageRank公式
+    #####:  234:            pr_new[node] = (1 - d)/N + d * sum;
+        -:  235:        }
+        -:  236:
+        -:  237:        // 检查收敛条件
+    #####:  238:        double max_diff = 0;
+    #####:  239:        for (const auto& node : nodes) {
+    #####:  240:            max_diff = max(max_diff, abs(pr_new[node] - pr_old[node]));
+        -:  241:        }
+    #####:  242:        if (max_diff < threshold) break;
+    #####:  243:        swap(pr_old, pr_new);
+        -:  244:    }
+    #####:  245:    return pr_old;
+    #####:  246:}
+        -:  247:
+        -:  248:// 随机游走
+    #####:  249:string randomWalk() {
+    #####:  250:    if (nodes.empty()) return "";
+    #####:  251:    vector<string> node_list(nodes.begin(), nodes.end());
+    #####:  252:    uniform_int_distribution<int> node_dist(0, node_list.size()-1);
+    #####:  253:    string current = node_list[node_dist(rng)];
+        -:  254:
+    #####:  255:    vector<string> path = {current};
+    #####:  256:    set<pair<string, string>> visited_edges;
+        -:  257:
+        -:  258:    while (true) {
+    #####:  259:        if (!adjList.count(current) || adjList[current].empty()) break;
+        -:  260:        
+        -:  261:        // 构建权重分布
+    #####:  262:        vector<string> candidates;
+    #####:  263:        vector<int> weights;
+    #####:  264:        int total = 0;
+    #####:  265:        for (const auto& [v, w] : adjList[current]) {
+    #####:  266:            candidates.push_back(v);
+    #####:  267:            weights.push_back(w);
+    #####:  268:            total += w;
+        -:  269:        }
+        -:  270:
+        -:  271:        // 按权重随机选择
+    #####:  272:        uniform_int_distribution<int> edge_dist(0, total-1);
+    #####:  273:        int r = edge_dist(rng);
+    #####:  274:        int sum = 0;
+    #####:  275:        string next;
+    #####:  276:        for (size_t i = 0; i < candidates.size(); ++i) {
+    #####:  277:            sum += weights[i];
+    #####:  278:            if (r < sum) {
+    #####:  279:                next = candidates[i];
+    #####:  280:                break;
+        -:  281:            }
+        -:  282:        }
+        -:  283:
+        -:  284:        // 检查重复边
+    #####:  285:        if (visited_edges.count({current, next})) break;
+    #####:  286:        visited_edges.insert({current, next});
+        -:  287:
+    #####:  288:        path.push_back(next);
+    #####:  289:        current = next;
+    #####:  290:    }
+        -:  291:
+        -:  292:    // 转换为字符串
+    #####:  293:    stringstream ss;
+    #####:  294:    for (size_t i = 0; i < path.size(); ++i) {
+    #####:  295:        ss << path[i];
+    #####:  296:        if (i != path.size()-1) ss << " ";
+        -:  297:    }
+    #####:  298:    return ss.str();
+    #####:  299:}
+        -:  300:
+        -:  301:
+    #####:  302:void showHelp() {
+        -:  303:    cout << "\n========== Graph Processor Menu ==========\n"
+        -:  304:         << "1. Show Graph Structure\n"
+        -:  305:         << "2. Query Bridge Words\n"
+        -:  306:         << "3. Generate New Text with Bridge Words\n"
+        -:  307:         << "4. Calculate Shortest Path\n"
+        -:  308:         << "5. Show PageRank Scores\n"
+        -:  309:         << "6. Perform Random Walk\n"
+        -:  310:         << "7. Exit Program\n"
+    #####:  311:         << "==========================================\n";
+    #####:  312:}
+        -:  313:
+        -:  314:// 主函数
+        -:  315:/*int main(int argc, char* argv[]) {
+        -:  316:    string filename;
+        -:  317:    if (argc > 1) {
+        -:  318:        filename = argv[1];
+        -:  319:    } else {
+        -:  320:        cout << "Enter text file path: ";
+        -:  321:        getline(cin, filename);
+        -:  322:    }
+        -:  323:
+        -:  324:    // 处理文件并建图
+        -:  325:    auto words = processFile(filename);
+        -:  326:    if (words.empty()) {
+        -:  327:        cerr << "Error: Failed to process file or file is empty.\n";
+        -:  328:        return 1;
+        -:  329:    }
+        -:  330:    buildGraph(words);
+        -:  331:    cout << "Graph built successfully with " << nodes.size() << " nodes.\n";
+        -:  332:
+        -:  333:    while (true) {
+        -:  334:        showHelp();
+        -:  335:        cout << "Enter your choice (1-7): ";
+        -:  336:        int choice;
+        -:  337:        cin >> choice;
+        -:  338:        cin.ignore();
+        -:  339:
+        -:  340:        switch (choice) {
+        -:  341:            case 1: { // 显示图结构
+        -:  342:                cout << "\nGraph Structure:\n";
+        -:  343:                for (const auto& [u, edges] : adjList) {
+        -:  344:                    cout << "[" << u << "] -> ";
+        -:  345:                    for (const auto& [v, w] : edges) {
+        -:  346:                        cout << v << "(" << w << ") ";
+        -:  347:                    }
+        -:  348:                    cout << "\n";
+        -:  349:                }
+        -:  350:                exportGraphToDot("graph.dot");
+        -:  351:                break;
+        -:  352:            }
+        -:  353:            case 2: { // 查询桥接词
+        -:  354:                string w1, w2;
+        -:  355:                cout << "Enter two words (separated by space): ";
+        -:  356:                cin >> w1 >> w2;
+        -:  357:                cin.ignore();
+        -:  358:
+        -:  359:                transform(w1.begin(), w1.end(), w1.begin(), ::tolower);
+        -:  360:                transform(w2.begin(), w2.end(), w2.begin(), ::tolower);
+        -:  361:
+        -:  362:                if (!nodes.count(w1) || !nodes.count(w2)) {
+        -:  363:                    cout << "No \"" << w1 << "\" or \"" << w2 << "\" in the graph!\n";
+        -:  364:                    break;
+        -:  365:                }
+        -:  366:
+        -:  367:                auto bridges = findBridgeWords(w1, w2);
+        -:  368:                if (bridges.empty()) {
+        -:  369:                    cout << "No bridge words from " << w1 << " to " << w2 << "!\n";
+        -:  370:                } else {
+        -:  371:                    cout << "The bridge words from " << w1 << " to " << w2 << " are: ";
+        -:  372:                    for (size_t i = 0; i < bridges.size(); ++i) {
+        -:  373:                        if (i == bridges.size()-1) {
+        -:  374:                            cout  << bridges[i] << ".\n";
+        -:  375:                        } else if (i == bridges.size()-2) {
+        -:  376:                            cout << bridges[i] << " ";
+        -:  377:                        } else {
+        -:  378:                            cout << bridges[i] << ", ";
+        -:  379:                        }
+        -:  380:                    }
+        -:  381:                }
+        -:  382:                break;
+        -:  383:            }
+        -:  384:            case 3: { // 生成新文本
+        -:  385:                string input;
+        -:  386:                cout << "Enter new text: ";
+        -:  387:                getline(cin, input);
+        -:  388:                string output = insertBridgeWords(input);
+        -:  389:                cout << "Result: " << output << "\n";
+        -:  390:                break;
+        -:  391:            }
+        -:  392:            case 4: { // 计算最短路径
+        -:  393:                string w1, w2;
+        -:  394:                cout << "Enter two words (separated by space): ";
+        -:  395:                cin >> w1 >> w2;
+        -:  396:                cin.ignore();
+        -:  397:
+        -:  398:                auto [path, len] = shortestPath(w1, w2);
+        -:  399:                if (len == -1) {
+        -:  400:                    cout << "\"" << w1 << "\" and \"" << w2 << "\" are not connected!\n";
+        -:  401:                } else {
+        -:  402:                    cout << "Shortest path (" << len << "): ";
+        -:  403:                    for (size_t i = 0; i < path.size(); ++i) {
+        -:  404:                        cout << path[i];
+        -:  405:                        if (i != path.size()-1) cout << " -> ";
+        -:  406:                    }
+        -:  407:                    cout << "\n";
+        -:  408:                }
+        -:  409:                break;
+        -:  410:            }
+        -:  411:            case 5: { // 显示PageRank
+        -:  412:                auto pr = calculatePageRank();
+        -:  413:                cout << "\nPageRank Scores:\n";
+        -:  414:                vector<pair<string, double>> sorted_pr(pr.begin(), pr.end());
+        -:  415:                sort(sorted_pr.begin(), sorted_pr.end(),
+        -:  416:                    [](const auto& a, const auto& b) { return a.second > b.second; });
+        -:  417:
+        -:  418:                for (const auto& [node, score] : sorted_pr) {
+        -:  419:                    cout << fixed << setprecision(4)
+        -:  420:                         << node << ": " << score << "\n";
+        -:  421:                }
+        -:  422:                break;
+        -:  423:            }
+        -:  424:            case 6: { // 随机游走
+        -:  425:                string walk = randomWalk();
+        -:  426:                cout << "Random walk path:\n" << walk << "\n";
+        -:  427:                
+        -:  428:                ofstream outfile("random_walk.txt");
+        -:  429:                if (outfile) {
+        -:  430:                    outfile << walk;
+        -:  431:                    cout << "Result saved to random_walk.txt\n";
+        -:  432:                } else {
+        -:  433:                    cerr << "Error saving file!\n";
+        -:  434:                }
+        -:  435:                break;
+        -:  436:            }
+        -:  437:            case 7: // 退出
+        -:  438:                cout << "Exiting program...\n";
+        -:  439:                return 0;
+        -:  440:            default:
+        -:  441:                cout << "Invalid choice!\n";
+        -:  442:        }
+        -:  443:    }
+        -:  444:}*/
