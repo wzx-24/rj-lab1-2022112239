@@ -36,12 +36,26 @@ int main() {
     assert(bridges2.empty());
     cout << "Test 2 passed.\n";
 
-    // 黑盒测试3：节点不存在
-    auto bridges3 = findBridgeWords("x", "y");
-    cout << "Test 3 bridges: ";
-    printBridges(bridges3);
-    assert(bridges3.empty());
-    cout << "Test 3 passed.\n";
+    // 黑盒测试3-1：起点不存在，终点存在
+    auto bridges3_1 = findBridgeWords("x", "b");
+    cout << "Test 3-1 bridges: ";
+    printBridges(bridges3_1);
+    assert(bridges3_1.empty());
+    cout << "Test 3-1 passed.\n";
+
+    // 黑盒测试3-2：起点存在，终点不存在
+    auto bridges3_2 = findBridgeWords("a", "y");
+    cout << "Test 3-2 bridges: ";
+    printBridges(bridges3_2);
+    assert(bridges3_2.empty());
+    cout << "Test 3-2 passed.\n";
+
+    // 黑盒测试3-3：起点和终点都不存在
+    auto bridges3_3 = findBridgeWords("x", "y");
+    cout << "Test 3-3 bridges: ";
+    printBridges(bridges3_3);
+    assert(bridges3_3.empty());
+    cout << "Test 3-3 passed.\n";
 
     // 黑盒测试4：多个桥接词
     // 构造 a->b->c, a->d->c
